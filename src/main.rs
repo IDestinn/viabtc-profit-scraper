@@ -36,7 +36,7 @@ async fn main() -> Result<()> {
         .collect();
 
     if urls.is_empty() {
-        println!("No URLs found");
+        println!("Ссылки (URL) не найдены");
         wait_exit();
         return Ok(());
     }
@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
     // -----------------------------
     // COINS CONFIG (EASILY EXTENDABLE)
     // -----------------------------
-    let coins = vec!["BTC", "BCH", "LTC"];
+    let coins = vec!["BTC", "LTC", "KAS"];
 
     // store totals per coin
     let mut totals: HashMap<String, f64> = HashMap::new();
@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
     }
 
     for url in urls {
-        println!("\nProcessing:\n{url}");
+        println!("\nОбрабатывается ссылка:\n{url}");
 
         for coin in &coins {
             match process_url(
@@ -81,14 +81,14 @@ async fn main() -> Result<()> {
                     writer.serialize(row)?;
                 }
                 Err(e) => {
-                    println!("ERROR ({coin}): {e}");
+                    println!("ОШИБКА ({coin}): {e}");
                 }
             }
         }
     }
 
     println!("\n==============================");
-    println!("FINAL TOTALS");
+    println!("ИТОГО");
     println!("==============================");
 
     for (coin, total) in totals {
@@ -97,7 +97,7 @@ async fn main() -> Result<()> {
 
     writer.flush()?;
 
-    println!("\nFinished.");
+    println!("\nКонец.");
     wait_exit();
 
     Ok(())
@@ -159,10 +159,10 @@ async fn process_url(
 }
 
 fn read_date_range() -> (Option<String>, Option<String>) {
-    println!("Date input (ENTER = full history)");
+    println!("Диапазон дат (ENTER = Полная история PPS)");
 
-    let start = read_line("Start date (YYYY-MM-DD): ");
-    let end = read_line("End date (YYYY-MM-DD): ");
+    let start = read_line("Дата начала диапазона (YYYY-MM-DD): ");
+    let end = read_line("Дата окончания диапазона (YYYY-MM-DD): ");
 
     let start = if start.is_empty() { None } else { Some(start) };
     let end = if end.is_empty() { None } else { Some(end) };
@@ -195,7 +195,7 @@ fn extract_access_key(url: &str) -> Result<String> {
 }
 
 fn wait_exit() {
-    println!("\nPress ENTER to exit...");
+    println!("\nНажмите ENTER чтобы выйти...");
     let mut s = String::new();
     let _ = io::stdin().read_line(&mut s);
 }
