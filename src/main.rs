@@ -128,7 +128,10 @@ async fn process_url(
 
     let text = resp.text().await?;
 
-    fs::write("debug_last_response.json", &text)?;
+    // -----------------------------
+    // DEBUG API OUTPUT
+    // -----------------------------
+    // fs::write("debug_last_response.json", &text)?;
 
     let json: Value = serde_json::from_str(&text)?;
 
