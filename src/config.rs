@@ -1,4 +1,4 @@
-pub const INPUT_FILE: &str = "input.csv";
+pub const INPUT_FILES: [&str; 4] = ["input.xlsx", "input.xls", "input.xlsm", "input.csv"];
 pub const OUTPUT_FILE: &str = "output.xlsx";
 
 pub const API_BASE_URL: &str = "https://www.viabtc.com/res/observer/profit/detail";

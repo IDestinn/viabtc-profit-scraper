@@ -1,5 +1,3 @@
-// src/api.rs
-
 use anyhow::{Context, Result};
 use reqwest::Client;
 use url::Url;
@@ -30,7 +28,14 @@ pub async fn fetch_coin_profit(
 
     let body = response.text().await?;
 
-    let parsed: ApiResponse = serde_json::from_str(&body).context("Invalid ViaBTC API response")?;
+    let parsed: ApiResponse = match serde_json::from_str(&body) {
+        Ok(v) => v,
+        Err(e) => {
+            save_debug_response(coin, &body)?;
+
+            return Err(e.into());
+        }
+    };
 
     let mut total = 0.0;
 
@@ -57,4 +62,19 @@ fn extract_access_key(url: &str) -> Result<String> {
     }
 
     anyhow::bail!("access_key not found")
+}
+
+use chrono::Local;
+use std::fs;
+
+fn save_debug_response(coin: &str, body: &str) -> Result<()> {
+    fs::create_dir_all("debug")?;
+
+    let timestamp = Local::now().format("%Y%m%d_%H%M%S");
+
+    let filename = format!("debug/{}_{}.json", coin, timestamp);
+
+    fs::write(filename, body)?;
+
+    Ok(())
 }

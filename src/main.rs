@@ -7,8 +7,12 @@ mod totals;
 mod utils;
 
 use anyhow::Result;
+use chrono::Local;
 use reqwest::Client;
 use std::collections::HashMap;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::panic;
 use std::time::Duration;
 use tracing::{error, info};
 
@@ -20,7 +24,25 @@ use totals::Totals;
 use utils::{read_date_range, wait_exit};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
+    init_panic_handler();
+
+    if let Err(err) = run().await {
+        log_error(&format!("{:#}", err));
+
+        println!();
+        println!("==================================");
+        println!("КРИТИЧЕСКАЯ ОШИБКА");
+        println!("==================================");
+        println!("{:#}", err);
+        println!();
+        println!("Подробности сохранены в log.txt");
+
+        wait_exit();
+    }
+}
+
+async fn run() -> Result<()> {
     init_logger();
 
     println!("==================================");
@@ -31,7 +53,11 @@ async fn main() -> Result<()> {
     // INPUT
     // ----------------------------------------
     let (start_date, end_date) = read_date_range();
-    let clients = load_input_file(INPUT_FILE)?;
+    let input_file = find_input_file()?;
+
+    println!("Файл ввода: {}", input_file);
+
+    let clients = load_input_file(&input_file)?;
 
     if clients.is_empty() {
         println!("input.csv пуст");
@@ -122,4 +148,54 @@ fn init_logger() {
         .with_target(false)
         .compact()
         .init();
+}
+
+fn init_panic_handler() {
+    panic::set_hook(Box::new(|panic_info| {
+        let message = match panic_info.payload().downcast_ref::<&str>() {
+            Some(s) => *s,
+            None => "Unknown panic",
+        };
+
+        let location = if let Some(location) = panic_info.location() {
+            format!("{}:{}", location.file(), location.line())
+        } else {
+            "unknown".to_string()
+        };
+
+        let full_message = format!("PANIC\nLocation: {}\nMessage: {}\n", location, message);
+
+        log_error(&full_message);
+
+        println!();
+        println!("==================================");
+        println!("ПРОГРАММА АВАРИЙНО ЗАВЕРШИЛАСЬ");
+        println!("==================================");
+        println!("{}", full_message);
+        println!("Подробности сохранены в log.txt");
+
+        wait_exit();
+    }));
+}
+
+fn log_error(message: &str) {
+    let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
+
+    let log_line = format!("[{}]\n{}\n\n", timestamp, message);
+
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open("log.txt") {
+        let _ = file.write_all(log_line.as_bytes());
+    }
+}
+
+fn find_input_file() -> Result<String> {
+    use std::path::Path;
+
+    for file in INPUT_FILES {
+        if Path::new(file).exists() {
+            return Ok(file.to_string());
+        }
+    }
+
+    anyhow::bail!("Не найден input файл (csv/xlsx)")
 }
